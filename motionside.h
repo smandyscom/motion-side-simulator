@@ -23,11 +23,9 @@ enum controlWordBitsMot
 enum states
 {
     IDLE,
-    WAIT_START,
     WAIT_MOT_REQ_ON,
     WAIT_MOT_ACTION, //simulated motion action
     WAIT_MOT_REQ_OFF,
-    WAIT_TRIG_ACK_ON,
     WAIT_TRIG_ACK_OFF
 };
 
@@ -52,24 +50,22 @@ class motionSide : public QObject
     Q_OBJECT
 public:
     explicit motionSide(QObject *parent = nullptr);
-
-    //const handshakeSignals transitionSignal();
-    //const bool transitionState();
-
-
 signals:
     void started();
     void transitionSatified(); //the condition about handshaking satisfied , e.g MOT_REQ_ON
-    void onlineShutted(); //the online signal disapperaed
+    void triggerAcknowledged(); // the trigger ackowledge on (process going to finish
 public slots:
-
-    void processingSignals(); //decide whether emit transitionSatisfied()
+    void process(); //decide whether emit transitionSatisfied()
+protected slots:
+    void motionDone();
     void stateEntered(); //occured on stateEntry signal emitted
-
+    void stateExited();
+    void onlineShutted(); //the online signal disapperaed
 protected:
 
     //memory map? update by external rountine timer?
-    quint16 memory[64];
+    quint16 memoryIn[64];
+    quint16 memoryOut[64];
 
     controlWordBitsAoi transitionSignal;
     bool transitionState; //ON,OFF
