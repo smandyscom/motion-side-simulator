@@ -37,12 +37,13 @@ enum triggerMode : quint16
 
 enum handshakeSchema
 {
-    MOT_CONTROL_WORRD=0,
+    MOT_CONTROL_WORD=0,
     MOT_TRIGGER_MODE=1,
     AOI_CONTROL_WORD=8,
     AOI_AXIS_DATA_1=16,
     AOI_AXIS_DATA_2=19,
-    AOI_DATA_1=32
+    AOI_DATA_1=32,
+    TOTAL_COUNT=64
 };
 
 struct axisData
@@ -80,13 +81,13 @@ protected:
     Q_SIGNAL void onlineShutted(); //the online signal disapperaed
 
     //memory map? update by external rountine timer?
-    quint16 registerIn[64];
-    quint16 registerOut[64];
+    quint16* registerIn;
+    quint16* registerOut;
+
+    quint16 __register[handshakeSchema::TOTAL_COUNT];
 
     quint16 nextTransitionSignal;
     bool nextTransitionState; //ON,OFF
-
-    //QVector<quint16> aoiDataCache(32,0);
 
     quint16* controlWordAoi;
     quint16* controlWordMot;

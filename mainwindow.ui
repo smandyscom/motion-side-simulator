@@ -27,40 +27,17 @@
      <string>Start</string>
     </property>
    </widget>
-   <widget class="QListView" name="listViewModelIn">
+   <widget class="QListView" name="listViewModel">
     <property name="geometry">
      <rect>
-      <x>30</x>
+      <x>10</x>
       <y>10</y>
       <width>451</width>
-      <height>291</height>
+      <height>521</height>
      </rect>
     </property>
    </widget>
-   <widget class="QPushButton" name="buttonSend">
-    <property name="geometry">
-     <rect>
-      <x>510</x>
-      <y>20</y>
-      <width>75</width>
-      <height>23</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Send</string>
-    </property>
-   </widget>
-   <widget class="QListView" name="listViewModelOut">
-    <property name="geometry">
-     <rect>
-      <x>30</x>
-      <y>310</y>
-      <width>451</width>
-      <height>231</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="pushButton">
+   <widget class="QPushButton" name="motionDoneButton">
     <property name="geometry">
      <rect>
       <x>700</x>
@@ -73,16 +50,6 @@
      <string>MotionDone</string>
     </property>
    </widget>
-   <widget class="QTextEdit" name="textEdit">
-    <property name="geometry">
-     <rect>
-      <x>510</x>
-      <y>250</y>
-      <width>281</width>
-      <height>91</height>
-     </rect>
-    </property>
-   </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
@@ -90,7 +57,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
   </widget>

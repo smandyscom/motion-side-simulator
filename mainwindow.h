@@ -7,6 +7,7 @@
 #include <motionside.h>
 
 #include <QStringListModel>
+#include <QModbusDataUnit>
 #include <QTimer>
 
 namespace Ui {
@@ -23,30 +24,20 @@ public:
 
 
 private slots:
-
-
-    void on_buttonSend_clicked();
-    void renderOut(QVector<quint16> value);
-
-    void on_pushButton_clicked();
-
-    void on_textEdit_textChanged();
-
-    void deviceWritten(QModbusDataUnit::RegisterType type,int address,int size); //writtend by MODBUSTCP MASTER
-
+     void deviceRegisterInternalWrite(QVector<quint16> value);
+     void deviceWritten(QModbusDataUnit::RegisterType type,int address,int size); //writtend by MODBUSTCP MASTER
+     void on_motionDoneButton_clicked();
 
 private:
-    QStringList l1,l2;
+    QStringList l1;
     Ui::MainWindow *ui;
     QModbusServer* device;
     MotionSide* __motionSide;
 
-    QStringListModel* modelIn;
-    QStringListModel* modelOut;
+    QStringListModel* modelRegister;
 
-    QTimer* __qtimer;
-
-
+    QModbusDataUnit* dataIn; //have to destrct or leak
+    QModbusDataUnit* dataOut;
 };
 
 #endif // MAINWINDOW_H

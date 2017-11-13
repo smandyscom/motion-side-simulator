@@ -5,6 +5,7 @@
 
 #include <QStringList>
 #include <QStringListModel>
+#include <QUrl>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -17,9 +18,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(device,SIGNAL(dataWritten(QModbusDataUnit::RegisterType,int,int)),this,SLOT(deviceWritten(QModbusDataUnit::RegisterType,int,int)));
 
     QModbusDataUnitMap reg;
-    reg.insert(QModbusDataUnit::Coils, { QModbusDataUnit::Coils, 0, 64 });
-    reg.insert(QModbusDataUnit::DiscreteInputs, { QModbusDataUnit::DiscreteInputs, 0, 64 });
-    reg.insert(QModbusDataUnit::InputRegisters, { QModbusDataUnit::InputRegisters, 0, 64 });
+    //reg.insert(QModbusDataUnit::Coils, { QModbusDataUnit::Coils, 0, 64 });
+    //reg.insert(QModbusDataUnit::DiscreteInputs, { QModbusDataUnit::DiscreteInputs, 0, 64 });
+    //reg.insert(QModbusDataUnit::InputRegisters, { QModbusDataUnit::InputRegisters, 0, 64 });
     reg.insert(QModbusDataUnit::HoldingRegisters, { QModbusDataUnit::HoldingRegisters, 0, 64 });
 
     device->setMap(reg);
@@ -30,86 +31,63 @@ MainWindow::MainWindow(QWidget *parent) :
     device->setServerAddress(1);
     device->connectDevice();
 
+    //prepare manipulating unit
+    dataIn = new QModbusDataUnit(QModbusDataUnit::HoldingRegisters,handshakeSchema::AOI_CONTROL_WORD,handshakeSchema::TOTAL_COUNT-handshakeSchema::AOI_CONTROL_WORD);
+    dataOut=new QModbusDataUnit(QModbusDataUnit::HoldingRegisters,handshakeSchema::MOT_CONTROL_WORD,handshakeSchema::AOI_CONTROL_WORD-handshakeSchema::MOT_CONTROL_WORD);
+
     //
     __motionSide = new MotionSide(this);
 
     connect(ui->buttonStart,SIGNAL(clicked()),__motionSide,SLOT(onStarted())); //button trigger onStarted
-    connect(__motionSide,SIGNAL(scanOut(QVector<quint16>)),this,SLOT(renderOut(QVector<quint16>)));
+    connect(__motionSide,SIGNAL(scanOut(QVector<quint16>)),this,SLOT(deviceRegisterInternalWrite(QVector<quint16>)));
 
 
-    for(int i=0;i<64;i++){
+    for(int i=0;i<64;i++)
         l1.append(QString::number(0));
-        l2.append(QString::number(0));
-    }
 
-    modelIn = new QStringListModel(l1);
-    modelOut = new QStringListModel(l2);
 
-    //modelIn->setStringList(l1);
-    //modelOut->setStringList(l2);
+    modelRegister = new QStringListModel(l1);
 
-    ui->listViewModelIn->setModel(modelIn);
-    ui->listViewModelOut->setModel(modelOut);
+    ui->listViewModel->setModel(modelRegister);
 
-    __qtimer = new QTimer(this);
-    __qtimer->setInterval(100);
-    connect(__qtimer,SIGNAL(timeout()),this,SLOT(deviceWritten()));
 }
 
 MainWindow::~MainWindow()
 {
-    delete ui;
 }
 
-void MainWindow::on_buttonSend_clicked()
-{
-    QVector<quint16> send;
 
-    foreach (QString __s, modelIn->stringList()) {
-        send.append(__s.toUShort());
+void MainWindow::deviceRegisterInternalWrite(QVector<quint16> outValues)
+{
+    dataOut->setValues(outValues);
+    device->setData(*dataOut);
+
+    for(int i=0;i<outValues.count();i++){
+        modelRegister->setData(modelRegister->index(handshakeSchema::MOT_CONTROL_WORD+i),outValues[i]);
+        device->setData(QModbusDataUnit::HoldingRegisters,i,outValues[i]);//override holding datas
     }
 
-    __motionSide->scanIn(send);//drive state machine
-}
-
-void MainWindow::renderOut(QVector<quint16> values)
-{
-    for(int i=0;i<values.count();i++)
-    {
-        modelOut->setData(modelOut->index(i,0),QString::number(values[i]));
-        //modelOut->stringList().replace(i,QString::number(values[i]))
-        device->setData(QModbusDataUnit::InputRegisters,i,values[i]);
-    }
 
 }
-
-void MainWindow::on_pushButton_clicked()
-{
-    __motionSide->motionDone();
-}
-
-void MainWindow::on_textEdit_textChanged()
-{
-    //modelOut->stringList().replace(0,ui->textEdit->toPlainText());
-    QString qs = ui->textEdit->toPlainText();
-    l2.replace(0,ui->textEdit->toPlainText());
-    l2[0] = ui->textEdit->toPlainText();
-    modelOut->setData(modelOut->index(0,0),ui->textEdit->toPlainText());
-}
-
 void MainWindow::deviceWritten(QModbusDataUnit::RegisterType type,int address,int size)
 {
     switch (type) {
-    case QModbusDataUnit::Coils:
-        quint16 cache;
-        for(int i=0;i<size;i++)
-        {
-            device->data(type,address+i,&cache);
-            modelIn->setData(modelIn->index(address+i,0),cache);
-        }
-        on_buttonSend_clicked();
-        break;
-    default:
+    case QModbusDataUnit::HoldingRegisters:
+
+        device->data(dataIn);
+
+        QVector<quint16> temp = dataIn->values();
+        __motionSide->scanIn(temp); // redirect to handshake controller
+
+        //sync with model
+        for (int i=0;i<temp.count();i++)
+            modelRegister->setData(modelRegister->index(handshakeSchema::AOI_CONTROL_WORD+i),temp[i]);
+
         break;
     }
+}
+
+void MainWindow::on_motionDoneButton_clicked()
+{
+    __motionSide->motionDone();
 }
