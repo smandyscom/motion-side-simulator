@@ -5,9 +5,13 @@
 
 MotionSide::MotionSide(QObject *parent) : QObject(parent)
 {
+    //register clear
+    memset(registerIn,0,64);
+    memset(registerOut,0,64);
+
     // initialize data anchor
     controlWordAoi = (quint16*)(&registerIn[handshakeSchema::CONTROL_WORD_AOI]);
-    controlWordMot = (quint16*)(&registerIn[handshakeSchema::CONTROL_WORD_MOT]);
+    controlWordMot = (quint16*)(&registerOut[handshakeSchema::CONTROL_WORD_MOT]);
     axisData1 = (AXIS_DATA*)(&registerIn[handshakeSchema::AXIS_DATA_1]);
     axisData2 = (AXIS_DATA*)(&registerIn[handshakeSchema::AXIS_DATA_2]);
 
@@ -44,10 +48,10 @@ MotionSide::MotionSide(QObject *parent) : QObject(parent)
 \
 
 
-void MotionSide::scanIn(const QVector<quint16> registerIn)
+void MotionSide::scanIn(const QVector<quint16> __registerIn)
 {
-    for(int i=0;i<registerIn.count();i++)
-        this->registerIn[i]=registerIn[i];// operator = , assign?
+    for(int i=0;i<__registerIn.count();i++)
+        this->registerIn[i]=__registerIn[i];// operator = , assign?
 
     //check bits and turns into Q_SIGNAL
     if ( (*controlWordAoi & controlWordBitsAoi::AOI_ONLINE) == 0)
@@ -73,12 +77,12 @@ void MotionSide::stateEntered()
 
     switch (stateContainer.keys(currentState).first()) {
     case states::IDLE:
-        //clear all signals
-        registerOut[CONTROL_WORD_MOT]=0;
+        //clear all signals , online only
+        *controlWordMot = controlWordBitsMot::MOTION_ONLINE;
         break;
     case states::WAIT_MOT_REQ_ON:
         //set-up trigger/online on , and mode
-        *controlWordMot &= !controlWordBitsMot::MOV_ACK; //MOV_ACK off
+        *controlWordMot &= ~controlWordBitsMot::MOV_ACK; //MOV_ACK off
         *controlWordMot |= controlWordBitsMot::MOTION_ONLINE+controlWordBitsMot::TRIG_REQUEST; // TRIG_REQ on , ONLINE on
 
         nextTransitionSignal = controlWordBitsAoi::MOV_REQUEST;
@@ -97,7 +101,7 @@ void MotionSide::stateEntered()
         //TODO fetch the AOI_DATAS
 
 
-        *controlWordMot &= !controlWordBitsMot::TRIG_REQUEST;//TRIG_REQ OFF
+        *controlWordMot &= ~controlWordBitsMot::TRIG_REQUEST;//TRIG_REQ OFF
 
         nextTransitionSignal = controlWordBitsAoi::TRIG_ACK;
         nextTransitionState = false;

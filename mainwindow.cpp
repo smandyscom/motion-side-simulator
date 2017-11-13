@@ -18,8 +18,9 @@ MainWindow::MainWindow(QWidget *parent) :
     __motionSide = new MotionSide(this);
 
     connect(ui->buttonStart,SIGNAL(clicked()),__motionSide,SLOT(onStarted())); //button trigger onStarted
+    connect(__motionSide,SIGNAL(scanOut(QVector<quint16>)),this,SLOT(renderOut(QVector<quint16>)));
 
-    QStringList l1,l2;
+
     for(int i=0;i<64;i++){
         l1.append(QString::number(0));
         l2.append(QString::number(0));
@@ -54,6 +55,21 @@ void MainWindow::on_buttonSend_clicked()
 void MainWindow::renderOut(QVector<quint16> values)
 {
     for(int i=0;i<values.count();i++)
-        modelOut->stringList().replace(i,QString::number(values[i]));
+        modelOut->setData(modelOut->index(i,0),QString::number(values[i]));
+        //modelOut->stringList().replace(i,QString::number(values[i]));
 
+}
+
+void MainWindow::on_pushButton_clicked()
+{
+    __motionSide->motionDone();
+}
+
+void MainWindow::on_textEdit_textChanged()
+{
+    //modelOut->stringList().replace(0,ui->textEdit->toPlainText());
+    QString qs = ui->textEdit->toPlainText();
+    l2.replace(0,ui->textEdit->toPlainText());
+    l2[0] = ui->textEdit->toPlainText();
+    modelOut->setData(modelOut->index(0,0),ui->textEdit->toPlainText());
 }

@@ -6,14 +6,14 @@
 #include <QState>
 #include <QModbusReply>
 
-enum controlWordBitsAoi
+enum controlWordBitsAoi : quint16
 {
     AOI_ONLINE=0x01,
     TRIG_ACK=0x02,
     MOV_REQUEST=0x04
 };
 
-enum controlWordBitsMot
+enum controlWordBitsMot : quint16
 {
     MOTION_ONLINE=0x01,
     TRIG_REQUEST=0x02,
@@ -67,13 +67,14 @@ public:
 signals:
     void started(); //by ui or some triggers
     void scanOut(const QVector<quint16> registerOut);
+    void motionDone();
 public slots:
     void onStarted();
     void scanIn(const QVector<quint16> registerIn); //decide whether emit transitionSatisfied()
 protected slots:
     void stateEntered(); //occured on stateEntry signal emitted
 protected:
-    Q_SIGNAL void motionDone();
+
     Q_SIGNAL void nextTransitionSatified(); //the condition about handshaking satisfied , e.g MOT_REQ_ON
     Q_SIGNAL void triggerAcknowledged(); // the trigger ackowledge on (process going to finish
     Q_SIGNAL void onlineShutted(); //the online signal disapperaed
@@ -82,7 +83,7 @@ protected:
     quint16 registerIn[64];
     quint16 registerOut[64];
 
-    controlWordBitsAoi nextTransitionSignal;
+    quint16 nextTransitionSignal;
     bool nextTransitionState; //ON,OFF
 
     //QVector<quint16> aoiDataCache(32,0);

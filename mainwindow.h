@@ -26,7 +26,12 @@ private slots:
     void on_buttonSend_clicked();
     void renderOut(QVector<quint16> value);
 
+    void on_pushButton_clicked();
+
+    void on_textEdit_textChanged();
+
 private:
+    QStringList l1,l2;
     Ui::MainWindow *ui;
     QModbusServer* device;
     MotionSide* __motionSide;
