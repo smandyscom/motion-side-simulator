@@ -7,6 +7,8 @@
 #include <motionside.h>
 
 #include <QStringListModel>
+#include <QTimer>
+
 namespace Ui {
 class MainWindow;
 }
@@ -30,6 +32,9 @@ private slots:
 
     void on_textEdit_textChanged();
 
+    void deviceWritten(QModbusDataUnit::RegisterType type,int address,int size); //writtend by MODBUSTCP MASTER
+
+
 private:
     QStringList l1,l2;
     Ui::MainWindow *ui;
@@ -38,6 +43,10 @@ private:
 
     QStringListModel* modelIn;
     QStringListModel* modelOut;
+
+    QTimer* __qtimer;
+
+
 };
 
 #endif // MAINWINDOW_H

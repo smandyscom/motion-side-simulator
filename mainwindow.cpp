@@ -14,7 +14,23 @@ MainWindow::MainWindow(QWidget *parent) :
 
     //
     device = new QModbusTcpServer(this);
+    connect(device,SIGNAL(dataWritten(QModbusDataUnit::RegisterType,int,int)),this,SLOT(deviceWritten(QModbusDataUnit::RegisterType,int,int)));
 
+    QModbusDataUnitMap reg;
+    reg.insert(QModbusDataUnit::Coils, { QModbusDataUnit::Coils, 0, 64 });
+    reg.insert(QModbusDataUnit::DiscreteInputs, { QModbusDataUnit::DiscreteInputs, 0, 64 });
+    reg.insert(QModbusDataUnit::InputRegisters, { QModbusDataUnit::InputRegisters, 0, 64 });
+    reg.insert(QModbusDataUnit::HoldingRegisters, { QModbusDataUnit::HoldingRegisters, 0, 64 });
+
+    device->setMap(reg);
+    //const QUrl url = QUrl::fromUserInput("127.0.0.1:502");
+    const QUrl url = QUrl::fromUserInput("192.168.1.4:502");
+    device->setConnectionParameter(QModbusDevice::NetworkPortParameter, url.port());
+    device->setConnectionParameter(QModbusDevice::NetworkAddressParameter, url.host());
+    device->setServerAddress(1);
+    device->connectDevice();
+
+    //
     __motionSide = new MotionSide(this);
 
     connect(ui->buttonStart,SIGNAL(clicked()),__motionSide,SLOT(onStarted())); //button trigger onStarted
@@ -34,6 +50,10 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->listViewModelIn->setModel(modelIn);
     ui->listViewModelOut->setModel(modelOut);
+
+    __qtimer = new QTimer(this);
+    __qtimer->setInterval(100);
+    connect(__qtimer,SIGNAL(timeout()),this,SLOT(deviceWritten()));
 }
 
 MainWindow::~MainWindow()
@@ -55,8 +75,11 @@ void MainWindow::on_buttonSend_clicked()
 void MainWindow::renderOut(QVector<quint16> values)
 {
     for(int i=0;i<values.count();i++)
+    {
         modelOut->setData(modelOut->index(i,0),QString::number(values[i]));
-        //modelOut->stringList().replace(i,QString::number(values[i]));
+        //modelOut->stringList().replace(i,QString::number(values[i]))
+        device->setData(QModbusDataUnit::InputRegisters,i,values[i]);
+    }
 
 }
 
@@ -72,4 +95,21 @@ void MainWindow::on_textEdit_textChanged()
     l2.replace(0,ui->textEdit->toPlainText());
     l2[0] = ui->textEdit->toPlainText();
     modelOut->setData(modelOut->index(0,0),ui->textEdit->toPlainText());
+}
+
+void MainWindow::deviceWritten(QModbusDataUnit::RegisterType type,int address,int size)
+{
+    switch (type) {
+    case QModbusDataUnit::Coils:
+        quint16 cache;
+        for(int i=0;i<size;i++)
+        {
+            device->data(type,address+i,&cache);
+            modelIn->setData(modelIn->index(address+i,0),cache);
+        }
+        on_buttonSend_clicked();
+        break;
+    default:
+        break;
+    }
 }
