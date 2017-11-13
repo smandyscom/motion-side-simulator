@@ -37,11 +37,11 @@ enum triggerMode : quint16
 
 enum handshakeSchema
 {
-    CONTROL_WORD_MOT=0,
-    CONTROL_WORD_AOI=1,
-    TRIGGER_MODE=2,
-    AXIS_DATA_1=16,
-    AXIS_DATA_2=19,
+    MOT_CONTROL_WORRD=0,
+    MOT_TRIGGER_MODE=1,
+    AOI_CONTROL_WORD=8,
+    AOI_AXIS_DATA_1=16,
+    AOI_AXIS_DATA_2=19,
     AOI_DATA_1=32
 };
 
