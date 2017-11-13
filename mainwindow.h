@@ -4,6 +4,9 @@
 #include <QMainWindow>
 #include <QModbusServer>
 #include <QStateMachine>
+#include <motionside.h>
+
+#include <QStringListModel>
 namespace Ui {
 class MainWindow;
 }
@@ -17,10 +20,19 @@ public:
     ~MainWindow();
 
 
+private slots:
+
+
+    void on_buttonSend_clicked();
+    void renderOut(QVector<quint16> value);
+
 private:
     Ui::MainWindow *ui;
     QModbusServer* device;
-    QStateMachine* motionSide;
+    MotionSide* __motionSide;
+
+    QStringListModel* modelIn;
+    QStringListModel* modelOut;
 };
 
 #endif // MAINWINDOW_H
