@@ -32,23 +32,23 @@ MotionSide::MotionSide(QObject *parent) : QObject(parent)
         connect(__state,SIGNAL(entered()),this,SLOT(stateEntered()));
     }
     //for each follwing state , jump off when online offed
-    foreach (states __s, QVector<states>({states::WAIT_MOT_REQ_ON,states::WAIT_MOT_REQ_OFF,states::WAIT_TRIG_ACK_OFF}))
+    foreach (states __s, QVector<states>({WAIT_MOT_REQ_ON,WAIT_MOT_REQ_OFF,WAIT_TRIG_ACK_OFF}))
     {
-        stateContainer[__s]->addTransition(this,SIGNAL(onlineShutted()),stateContainer[states::IDLE]);
+        stateContainer[__s]->addTransition(this,SIGNAL(onlineShutted()),stateContainer[IDLE]);
     }
 
     //configure state machine
-    stateContainer[states::IDLE]->addTransition(this,SIGNAL(started()),stateContainer[states::WAIT_MOT_REQ_ON]);
+    stateContainer[IDLE]->addTransition(this,SIGNAL(started()),stateContainer[WAIT_MOT_REQ_ON]);
 
-    stateContainer[states::WAIT_MOT_REQ_ON]->addTransition(this,SIGNAL(triggerAcknowledged()),stateContainer[states::WAIT_TRIG_ACK_OFF]); //process finished
-    stateContainer[states::WAIT_MOT_REQ_ON]->addTransition(this,SIGNAL(nextTransitionSatified()),stateContainer[states::WAIT_MOT_ACTION]);
+    stateContainer[WAIT_MOT_REQ_ON]->addTransition(this,SIGNAL(triggerAcknowledged()),stateContainer[WAIT_TRIG_ACK_OFF]); //process finished
+    stateContainer[WAIT_MOT_REQ_ON]->addTransition(this,SIGNAL(nextTransitionSatified()),stateContainer[WAIT_MOT_REQ_OFF]);
 
-    stateContainer[states::WAIT_MOT_ACTION]->addTransition(this,SIGNAL(motionDone()),stateContainer[states::WAIT_MOT_REQ_OFF]);
-    stateContainer[states::WAIT_MOT_REQ_OFF]->addTransition(this,SIGNAL(nextTransitionSatified()),stateContainer[states::WAIT_MOT_REQ_ON]);
+    stateContainer[WAIT_MOT_REQ_OFF]->addTransition(this,SIGNAL(nextTransitionSatified()),stateContainer[WAIT_MOT_ACTION]);
+    stateContainer[WAIT_MOT_ACTION]->addTransition(this,SIGNAL(motionDone()),stateContainer[WAIT_MOT_REQ_ON]);
 
-    stateContainer[states::WAIT_TRIG_ACK_OFF]->addTransition(this,SIGNAL(nextTransitionSatified()),stateContainer[states::IDLE]); //recycle
+    stateContainer[WAIT_TRIG_ACK_OFF]->addTransition(this,SIGNAL(nextTransitionSatified()),stateContainer[IDLE]); //recycle
 
-    stateMachine.setInitialState(stateContainer[states::IDLE]);
+    stateMachine.setInitialState(stateContainer[IDLE]);
     stateMachine.start();
 }
 \
@@ -89,14 +89,15 @@ void MotionSide::stateEntered()
         nextTransitionSignal = controlWordBitsAoi::MOV_REQUEST;
         nextTransitionState = true;
         break;
-    case states::WAIT_MOT_ACTION:
-        //activate motion
-        break;
+
     case states::WAIT_MOT_REQ_OFF:
         *controlWordMot |= controlWordBitsMot::MOV_ACK;//MOV_ACK on
 
         nextTransitionSignal = controlWordBitsAoi::MOV_REQUEST;
         nextTransitionState = false;
+        break;
+    case states::WAIT_MOT_ACTION:
+        //activate motion
         break;
     case states::WAIT_TRIG_ACK_OFF:
         //TODO fetch the AOI_DATAS

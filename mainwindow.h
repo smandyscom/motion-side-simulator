@@ -7,6 +7,7 @@
 #include <motionside.h>
 
 #include <QStringListModel>
+#include <QStandardItemModel>
 #include <QModbusDataUnit>
 #include <QTimer>
 
@@ -28,12 +29,11 @@ private slots:
      void deviceWritten(QModbusDataUnit::RegisterType type,int address,int size); //writtend by MODBUSTCP MASTER
      void stateChangedHandler(const QState *currentState);
 private:
-    QStringList l1;
     Ui::MainWindow *ui;
     QModbusServer* device;
     MotionSide* __motionSide;
 
-    QStringListModel* modelRegister;
+    QStandardItemModel* modelRegister;
 
     QModbusDataUnit* dataIn; //have to destrct or leak
     QModbusDataUnit* dataOut;

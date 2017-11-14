@@ -27,16 +27,6 @@
      <string>Start</string>
     </property>
    </widget>
-   <widget class="QListView" name="listViewModel">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>10</y>
-      <width>451</width>
-      <height>521</height>
-     </rect>
-    </property>
-   </widget>
    <widget class="QPushButton" name="buttonMotionDone">
     <property name="geometry">
      <rect>
@@ -48,6 +38,16 @@
     </property>
     <property name="text">
      <string>MotionDone</string>
+    </property>
+   </widget>
+   <widget class="QTableView" name="registerTableView">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>10</y>
+      <width>331</width>
+      <height>521</height>
+     </rect>
     </property>
    </widget>
   </widget>

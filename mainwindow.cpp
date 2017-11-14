@@ -5,6 +5,7 @@
 
 #include <QStringList>
 #include <QStringListModel>
+#include <QStandardItemModel>
 #include <QUrl>
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -32,8 +33,8 @@ MainWindow::MainWindow(QWidget *parent) :
     device->connectDevice();
 
     //prepare manipulating unit
-    dataIn = new QModbusDataUnit(QModbusDataUnit::HoldingRegisters,handshakeSchema::AOI_CONTROL_WORD,handshakeSchema::AOI_BLOCK_SIZE);
-    dataOut=new QModbusDataUnit(QModbusDataUnit::HoldingRegisters,handshakeSchema::MOT_CONTROL_WORD,handshakeSchema::MOT_BLOCK_SIZE);
+    dataIn = new QModbusDataUnit(QModbusDataUnit::HoldingRegisters,MotionSide::AOI_CONTROL_WORD,MotionSide::AOI_BLOCK_SIZE);
+    dataOut=new QModbusDataUnit(QModbusDataUnit::HoldingRegisters,MotionSide::MOT_CONTROL_WORD,MotionSide::MOT_BLOCK_SIZE);
 
     //
     __motionSide = new MotionSide(this);
@@ -44,15 +45,21 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(__motionSide,SIGNAL(scanOut(QVector<quint16>)),this,SLOT(deviceRegisterInternalWrite(QVector<quint16>)));
     connect(__motionSide,SIGNAL(stateChanged(const QState*)),this,SLOT(stateChangedHandler(const QState*)));
 
+    modelRegister = new QStandardItemModel(this);
 
-    for(int i=0;i<64;i++)
-        l1.append(QString::number(0));
+    modelRegister->insertColumns(0,2);
+    modelRegister->insertRows(0,MotionSide::TOTAL_COUNT);
 
+    modelRegister->setHeaderData(0,Qt::Horizontal,QString("Name"));
+    modelRegister->setHeaderData(1,Qt::Horizontal,QString("Value"));
 
-    modelRegister = new QStringListModel(l1);
+    QMetaEnum schemaMetaEnum = QMetaEnum::fromType<MotionSide::handshakeSchema>();
+    for(int i=0;i<schemaMetaEnum.keyCount();i++){
+        modelRegister->setData(modelRegister->index(schemaMetaEnum.keyToValue(schemaMetaEnum.key(i)),0)
+                               ,QString(schemaMetaEnum.key(i)));
+    }
 
-    ui->listViewModel->setModel(modelRegister);
-
+    ui->registerTableView->setModel(modelRegister);
 }
 
 MainWindow::~MainWindow()
@@ -68,7 +75,7 @@ void MainWindow::deviceRegisterInternalWrite(QVector<quint16> outValues)
     device->setData(*dataOut);
 
     for(int i=0;i<outValues.count();i++)
-        modelRegister->setData(modelRegister->index(handshakeSchema::MOT_CONTROL_WORD+i),outValues[i]);
+        modelRegister->setData(modelRegister->index(MotionSide::MOT_CONTROL_WORD+i,1),tr("0x%1").arg(outValues[i],4,16,QChar('0')));
 }
 void MainWindow::deviceWritten(QModbusDataUnit::RegisterType type,int address,int size)
 {
@@ -82,7 +89,7 @@ void MainWindow::deviceWritten(QModbusDataUnit::RegisterType type,int address,in
 
         //sync with model
         for (int i=0;i<temp.count();i++)
-            modelRegister->setData(modelRegister->index(handshakeSchema::AOI_CONTROL_WORD+i),temp[i]);
+            modelRegister->setData(modelRegister->index(MotionSide::AOI_CONTROL_WORD+i,1),tr("0x%1").arg(temp[i],4,16,QChar('0')));
         break;
     }
 }

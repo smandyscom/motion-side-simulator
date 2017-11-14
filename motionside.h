@@ -28,18 +28,8 @@ enum triggerMode : quint16
     SEMI=1,
 };
 
-enum handshakeSchema
-{
-    MOT_CONTROL_WORD=0,
-    MOT_TRIGGER_MODE=1,
-    AOI_CONTROL_WORD=8,
-    AOI_AXIS_DATA_1=16,
-    AOI_AXIS_DATA_2=19,
-    AOI_DATA_1=32,
-    TOTAL_COUNT=64,
-    MOT_BLOCK_SIZE = AOI_CONTROL_WORD-MOT_CONTROL_WORD,
-    AOI_BLOCK_SIZE = TOTAL_COUNT-AOI_CONTROL_WORD
-};
+
+
 
 struct axisData
 {
@@ -57,6 +47,18 @@ class MotionSide : public QObject
     Q_OBJECT
 public:
     explicit MotionSide(QObject *parent = nullptr);
+    enum handshakeSchema
+    {
+        MOT_CONTROL_WORD=0,
+        MOT_TRIGGER_MODE=1,
+        AOI_CONTROL_WORD=8,
+        AOI_AXIS_DATA_1=16,
+        AOI_AXIS_DATA_2=19,
+        AOI_DATA_1=32,
+        TOTAL_COUNT=64,
+        MOT_BLOCK_SIZE = AOI_CONTROL_WORD-MOT_CONTROL_WORD,
+        AOI_BLOCK_SIZE = TOTAL_COUNT-AOI_CONTROL_WORD
+    };
 
     enum states
     {
@@ -67,7 +69,7 @@ public:
         WAIT_TRIG_ACK_OFF
     };
     Q_ENUM(states)
-
+    Q_ENUM(handshakeSchema)
 
     void setMode(triggerMode mode);
     triggerMode getMode(void) const;
