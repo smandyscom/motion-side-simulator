@@ -26,8 +26,7 @@ public:
 private slots:
      void deviceRegisterInternalWrite(QVector<quint16> value);
      void deviceWritten(QModbusDataUnit::RegisterType type,int address,int size); //writtend by MODBUSTCP MASTER
-     void on_motionDoneButton_clicked();
-
+     void stateChangedHandler(const QState *currentState);
 private:
     QStringList l1;
     Ui::MainWindow *ui;

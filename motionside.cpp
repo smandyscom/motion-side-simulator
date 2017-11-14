@@ -6,20 +6,25 @@
 MotionSide::MotionSide(QObject *parent) : QObject(parent)
 {
     //register clear
-    memset(__register,0,handshakeSchema::TOTAL_COUNT);
-    registerIn=reinterpret_cast<quint16*>(&__register[handshakeSchema::AOI_CONTROL_WORD]);
-    registerOut=reinterpret_cast<quint16*>(&__register[handshakeSchema::MOT_CONTROL_WORD]);
+    memset(__register,0,sizeof(quint16)*handshakeSchema::TOTAL_COUNT);
+
+    registerIn=&__register[handshakeSchema::AOI_CONTROL_WORD];
+    registerOut=&__register[handshakeSchema::MOT_CONTROL_WORD];
 
     // initialize data anchor
-    controlWordAoi = &registerIn[handshakeSchema::AOI_CONTROL_WORD];
-    controlWordMot = &registerOut[handshakeSchema::MOT_CONTROL_WORD];
-    axisData1 = reinterpret_cast<AXIS_DATA*>(&registerIn[handshakeSchema::AOI_AXIS_DATA_1]);
-    axisData2 = reinterpret_cast<AXIS_DATA*>(&registerIn[handshakeSchema::AOI_AXIS_DATA_2]);
+    controlWordAoi = registerIn;
+    controlWordMot = registerOut;
+    axisData1 = reinterpret_cast<AXIS_DATA*>(&__register[handshakeSchema::AOI_AXIS_DATA_1]);
+    axisData2 = reinterpret_cast<AXIS_DATA*>(&__register[handshakeSchema::AOI_AXIS_DATA_2]);
 
     //state machine initialize
-
-    for (int i=states::IDLE;i<=states::WAIT_TRIG_ACK_OFF;i++)
-        stateContainer.insert(static_cast<states>(i),new QState());
+    QMetaEnum statesMetaEnum = QMetaEnum::fromType<MotionSide::states>();
+    QState* temp = nullptr;
+    for (int i=states::IDLE;i<=states::WAIT_TRIG_ACK_OFF;i++){
+        temp = new QState();
+        temp->setObjectName(statesMetaEnum.valueToKey(i));
+        stateContainer.insert(static_cast<states>(i),temp);
+    }
 
     //direct to central processor
     foreach (QState* __state, stateContainer.values()) {
@@ -51,7 +56,7 @@ MotionSide::MotionSide(QObject *parent) : QObject(parent)
 
 void MotionSide::scanIn(const QVector<quint16> __registerIn)
 {
-    for(int i=0;i<__registerIn.count();i++)
+    for(int i=0;i<AOI_BLOCK_SIZE;i++)
         this->registerIn[i]=__registerIn[i];// operator = , assign?
 
     //check bits and turns into Q_SIGNAL
@@ -65,11 +70,6 @@ void MotionSide::scanIn(const QVector<quint16> __registerIn)
     //--------------------
     //signal logger here?
     //--------------------
-
-    QVector<quint16> __registerOut;
-    for(int i=0;i<64;i++)
-        __registerOut.append(registerOut[i]);
-    emit scanOut(__registerOut); //populate out register
 }
 
 void MotionSide::stateEntered()
@@ -110,13 +110,17 @@ void MotionSide::stateEntered()
     default:
         break;
     }
+
+    //state changed informer
+    emit stateChanged(currentState);
+    emit scanOut(__registerOut());
 }
 
 void MotionSide::setMode(triggerMode mode)
 {
     registerOut[handshakeSchema::MOT_TRIGGER_MODE] = mode;
 }
-const triggerMode MotionSide::getMode()
+ triggerMode MotionSide::getMode() const
 {
     return static_cast<triggerMode>(registerOut[handshakeSchema::MOT_TRIGGER_MODE]);
 }
@@ -124,4 +128,21 @@ const triggerMode MotionSide::getMode()
 void MotionSide::onStarted()
 {
     emit started();
+}
+void MotionSide::onMotionDone()
+{
+    emit motionDone();
+}
+
+
+const QVector<quint16> MotionSide::__registerOut()
+{
+    if (____registerOut.count()<MOT_BLOCK_SIZE)
+        for(int i=0;i<MOT_BLOCK_SIZE;i++)
+            ____registerOut.append(registerOut[i]);
+    else
+        for(int i=0;i<____registerOut.count();i++)
+            ____registerOut[i]=registerOut[i];
+
+    return ____registerOut;
 }

@@ -20,14 +20,7 @@ enum controlWordBitsMot : quint16
     MOV_ACK=0x04
 };
 
-enum states
-{
-    IDLE,
-    WAIT_MOT_REQ_ON,
-    WAIT_MOT_ACTION, //simulated motion action
-    WAIT_MOT_REQ_OFF,
-    WAIT_TRIG_ACK_OFF
-};
+
 
 enum triggerMode : quint16
 {
@@ -43,7 +36,9 @@ enum handshakeSchema
     AOI_AXIS_DATA_1=16,
     AOI_AXIS_DATA_2=19,
     AOI_DATA_1=32,
-    TOTAL_COUNT=64
+    TOTAL_COUNT=64,
+    MOT_BLOCK_SIZE = AOI_CONTROL_WORD-MOT_CONTROL_WORD,
+    AOI_BLOCK_SIZE = TOTAL_COUNT-AOI_CONTROL_WORD
 };
 
 struct axisData
@@ -63,18 +58,32 @@ class MotionSide : public QObject
 public:
     explicit MotionSide(QObject *parent = nullptr);
 
+    enum states
+    {
+        IDLE,
+        WAIT_MOT_REQ_ON,
+        WAIT_MOT_ACTION, //simulated motion action
+        WAIT_MOT_REQ_OFF,
+        WAIT_TRIG_ACK_OFF
+    };
+    Q_ENUM(states)
+
+
     void setMode(triggerMode mode);
-    const triggerMode getMode(void);
+    triggerMode getMode(void) const;
 signals:
-    void started(); //by ui or some triggers
+    void stateChanged(const QState *currentState);
     void scanOut(const QVector<quint16> registerOut);
-    void motionDone();
 public slots:
     void onStarted();
+    void onMotionDone(); //triggered by external
     void scanIn(const QVector<quint16> registerIn); //decide whether emit transitionSatisfied()
 protected slots:
     void stateEntered(); //occured on stateEntry signal emitted
 protected:
+
+    Q_SIGNAL void motionDone();
+    Q_SIGNAL void started(); //by ui or some triggers
 
     Q_SIGNAL void nextTransitionSatified(); //the condition about handshaking satisfied , e.g MOT_REQ_ON
     Q_SIGNAL void triggerAcknowledged(); // the trigger ackowledge on (process going to finish
@@ -83,6 +92,8 @@ protected:
     //memory map? update by external rountine timer?
     quint16* registerIn;
     quint16* registerOut;
+    QVector<quint16> ____registerOut;
+    const QVector<quint16> __registerOut();
 
     quint16 __register[handshakeSchema::TOTAL_COUNT];
 
@@ -96,6 +107,7 @@ protected:
 
     QStateMachine stateMachine;
     QMap<states,QState*> stateContainer;
+
 
 
 };

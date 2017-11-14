@@ -24,22 +24,25 @@ MainWindow::MainWindow(QWidget *parent) :
     reg.insert(QModbusDataUnit::HoldingRegisters, { QModbusDataUnit::HoldingRegisters, 0, 64 });
 
     device->setMap(reg);
-    //const QUrl url = QUrl::fromUserInput("127.0.0.1:502");
-    const QUrl url = QUrl::fromUserInput("192.168.1.4:502");
+    const QUrl url = QUrl::fromUserInput("127.0.0.1:502");
+    //const QUrl url = QUrl::fromUserInput("192.168.1.4:502");
     device->setConnectionParameter(QModbusDevice::NetworkPortParameter, url.port());
     device->setConnectionParameter(QModbusDevice::NetworkAddressParameter, url.host());
     device->setServerAddress(1);
     device->connectDevice();
 
     //prepare manipulating unit
-    dataIn = new QModbusDataUnit(QModbusDataUnit::HoldingRegisters,handshakeSchema::AOI_CONTROL_WORD,handshakeSchema::TOTAL_COUNT-handshakeSchema::AOI_CONTROL_WORD);
-    dataOut=new QModbusDataUnit(QModbusDataUnit::HoldingRegisters,handshakeSchema::MOT_CONTROL_WORD,handshakeSchema::AOI_CONTROL_WORD-handshakeSchema::MOT_CONTROL_WORD);
+    dataIn = new QModbusDataUnit(QModbusDataUnit::HoldingRegisters,handshakeSchema::AOI_CONTROL_WORD,handshakeSchema::AOI_BLOCK_SIZE);
+    dataOut=new QModbusDataUnit(QModbusDataUnit::HoldingRegisters,handshakeSchema::MOT_CONTROL_WORD,handshakeSchema::MOT_BLOCK_SIZE);
 
     //
     __motionSide = new MotionSide(this);
 
     connect(ui->buttonStart,SIGNAL(clicked()),__motionSide,SLOT(onStarted())); //button trigger onStarted
+    connect(ui->buttonMotionDone,SIGNAL(clicked()),__motionSide,SLOT(onMotionDone()));
+
     connect(__motionSide,SIGNAL(scanOut(QVector<quint16>)),this,SLOT(deviceRegisterInternalWrite(QVector<quint16>)));
+    connect(__motionSide,SIGNAL(stateChanged(const QState*)),this,SLOT(stateChangedHandler(const QState*)));
 
 
     for(int i=0;i<64;i++)
@@ -54,6 +57,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
 MainWindow::~MainWindow()
 {
+    //delete dataIn;
+    //delete dataOut;
 }
 
 
@@ -62,12 +67,8 @@ void MainWindow::deviceRegisterInternalWrite(QVector<quint16> outValues)
     dataOut->setValues(outValues);
     device->setData(*dataOut);
 
-    for(int i=0;i<outValues.count();i++){
+    for(int i=0;i<outValues.count();i++)
         modelRegister->setData(modelRegister->index(handshakeSchema::MOT_CONTROL_WORD+i),outValues[i]);
-        device->setData(QModbusDataUnit::HoldingRegisters,i,outValues[i]);//override holding datas
-    }
-
-
 }
 void MainWindow::deviceWritten(QModbusDataUnit::RegisterType type,int address,int size)
 {
@@ -82,12 +83,11 @@ void MainWindow::deviceWritten(QModbusDataUnit::RegisterType type,int address,in
         //sync with model
         for (int i=0;i<temp.count();i++)
             modelRegister->setData(modelRegister->index(handshakeSchema::AOI_CONTROL_WORD+i),temp[i]);
-
         break;
     }
 }
 
-void MainWindow::on_motionDoneButton_clicked()
+void MainWindow::stateChangedHandler(const QState* currentState)
 {
-    __motionSide->motionDone();
+    ui->statusBar->showMessage(tr("Current State: %1").arg(currentState->objectName()));
 }
