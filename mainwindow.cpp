@@ -45,6 +45,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(__motionSide,SIGNAL(scanOut(QVector<quint16>)),this,SLOT(deviceRegisterInternalWrite(QVector<quint16>)));
     connect(__motionSide,SIGNAL(stateChanged(const QState*)),this,SLOT(stateChangedHandler(const QState*)));
 
+    //setup model-view
     modelRegister = new QStandardItemModel(this);
 
     modelRegister->insertColumns(0,2);
